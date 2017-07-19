@@ -31,9 +31,9 @@ public class MainController {
 			HttpServletRequest request, HttpServletResponse response, HttpSession session) throws Exception{
 		
 		SearchOptionVO searchOptionVO = new SearchOptionVO();
-		@SuppressWarnings("unchecked")
-		List<TBL01VO> list = (List<TBL01VO>) dao.selectList("common.selectLand", searchOptionVO);
-		model.addAttribute("list", list);
+//		@SuppressWarnings("unchecked")
+//		List<TBL01VO> list = (List<TBL01VO>) dao.selectList("common.selectLand", searchOptionVO);
+//		model.addAttribute("list", list);
 		
 		return "main";
 	}

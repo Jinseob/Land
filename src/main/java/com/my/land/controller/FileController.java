@@ -1,9 +1,12 @@
 package com.my.land.controller;
 
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -31,6 +34,12 @@ import com.my.land.model.FileVO;
 @Controller
 public class FileController {
 	private static final Logger logger = LoggerFactory.getLogger(FileController.class);
+//	private static Map<String, String> excelList;
+//	private static String[][] excelList = null;
+	private static Map<String, String> excelList = new HashMap<String, String>();
+	private static String column = "";
+	private static boolean columnChecked = false;
+	private static int row;
 
 	@Autowired
 	private CmmnDao dao;
@@ -39,91 +48,38 @@ public class FileController {
 	public String fileUpload(@ModelAttribute("fileUpload")FileVO fileUpload, HttpServletRequest request) throws Exception{
 		
 		this.processOneSheet(fileUpload);
-		
-//		MultipartHttpServletRequest mpRequest = (MultipartHttpServletRequest)request;
-//		Iterator<String> fileNames = null;
-//		fileNames = mpRequest.getFileNames();
-		
-		
-		
-//		while(fileNames.hasNext()){
-//			FileInputStream fis = new FileInputStream(fileUpload.getFileData().getInputStream());
-			
-//		POIFSFileSystem fileSystem = new POIFSFileSystem(fileUpload.getFileData().getInputStream());
-		
-//		OPCPackage pkg = OPCPackage.open(fileUpload.getFileData().getInputStream());
-//		try{
-//			XSSFReader r = new XSSFReader(pkg);
-//			SharedStringsTable sst = r.getSharedStringsTable();
-//			XmlReader parser = 
-//			
-//		}finally{
-//			pkg.close();
-//		}
-//		SXSSFWorkbook wb = new SXSSFWorkbook(-1);
-		
-//		Workbook wb = null;
-//		if(fileUpload.getFileData().getOriginalFilename().endsWith("xlsx")){
-//			OPCPackage pkg = OPCPackage.open(fileUpload.getFileData().getInputStream());
-//			XSSFReader xr = new XSSFReader(pkg);
-//			wb = new XSSFWorkbook(pkg);
-//		}else if(fileUpload.getFileData().getOriginalFilename().endsWith("xls")){
-//			wb = new HSSFWorkbook(fileUpload.getFileData().getInputStream());
-//		}else{
-//			throw new Exception("Invalid file name, should be xls or xlsx");
-//		}
-		
-//		try{
-//			for(int i = 0; i < wb.getNumberOfSheets(); i++){
-//				Sheet sheet = wb.getSheetAt(i);
-//				int rows = sheet.getPhysicalNumberOfRows();
-//				
-//				for(int j = 0; j < rows; j++){
-//					Row row = sheet.getRow(j);
-//					if(row == null){
-//						continue;
-//					}
-//					
-//					for(int a = 0; a < row.getLastCellNum(); a++){
-//						Cell cell = row.getCell(a);
-//						String value;
-//						
-//						if(cell != null){
-//							switch(cell.getCellTypeEnum()){
-//							case FORMULA:
-//								value = "FORMULA value=" + cell.getCellFormula();
-//								break;
-//							case NUMERIC:
-//								value = "NUMERIC value=" + cell.getNumericCellValue();
-//								break;
-//							case STRING:
-//								value = "STRING value=" + cell.getStringCellValue();
-//								break;
-//							case BLANK:
-//								value = "<BLANK>";
-//								break;
-//							case BOOLEAN:
-//								value = "BOOLEAN value=" + cell.getBooleanCellValue();
-//								break;
-//							case ERROR:
-//								value = "ERROR value=" + cell.getErrorCellValue();
-//								break;
-//							default:
-//								value = "UNKNOWN value of type " + cell.getCellTypeEnum();
-//							}
-//						}
-//					}
-//				}
-//			}
-//		}finally{
-//			wb.close();
-//		}
-			
-//		}
-		
-		
+		System.out.println("Column : " + column + " , Row : " + row);
+		for(int i = 2 ; i <= row ; i++){	// 1 은 Head
+			String tempColumn[] = column.split(";");
+			for(int j = 0; j < tempColumn.length; j++){
+				System.out.print(tempColumn[j] + i + " : " + excelList.get(tempColumn[j] + i) + " / ");
+			}
+			System.out.println();
+		}
 		return "main";
 	}
+	
+	// 문자 제외. 숫자만 남기기.
+	public static String getOnlyDigit1(String str){
+		String ret = "";
+		if(str != null && str.length() != 0){
+			String tmpStr = str;
+			StringBuffer sb = new StringBuffer();
+			if(tmpStr.length() != 0){
+				Pattern p = Pattern.compile("[^\\d]");
+				Matcher m = p.matcher(str);
+				while(m.find()){
+					m.appendReplacement(sb, "");
+				}
+				m.appendTail(sb);
+			}else{
+				sb.append("");
+			}
+			ret = sb.toString();
+		}
+		return ret;
+	}
+	// 여기까지
 	
 	public void processOneSheet(FileVO fileUpload) throws Exception {
 		OPCPackage pkg = OPCPackage.open(fileUpload.getFileData().getInputStream());
@@ -178,6 +134,7 @@ public class FileController {
 		private boolean nextIsString;
 		private boolean inlineStr;
 		private final LruCache<Integer,String> lruCache = new LruCache<Integer,String>(50);
+		private String cellField;
 
 		private static class LruCache<A,B> extends LinkedHashMap<A, B> {
 		    private final int maxEntries;
@@ -204,6 +161,39 @@ public class FileController {
 			if(name.equals("c")) {
 				// Print the cell reference
 				System.out.print(attributes.getValue("r") + " - ");
+				cellField = attributes.getValue("r");
+				excelList.put(cellField, "");
+				
+				// 헤드가 사용한 column 지정 로직.
+				String[] tempChar = cellField.split("[0-9]");		// split 숫자 하나씩 배열로 저장. column
+				String tempColumn = "";
+				if(!columnChecked){
+					for(int i = 0 ; i < tempChar.length; i++){
+						tempColumn += tempChar[i];
+					}
+					if(column.indexOf(tempColumn) < 0){
+						if(column.equals("")){
+							column += tempColumn;
+						}else{
+							column += ";" + tempColumn;
+						}
+					}else{
+						columnChecked = true;
+					}
+				}
+				// 헤드가 사용한 column 지정 로직.
+
+				// 마지막 row 지정 로직.
+				String[] tempNum = cellField.split("[a-zA-Z]");		// split 문자 하나씩 배열로 저장. row
+				String tempRow = "";
+				if(cellField.indexOf(row) < 0){
+					for(int i = 0 ; i < tempNum.length; i++){
+						tempRow += tempNum[i];
+					}
+					row = Integer.parseInt(tempRow);
+				}
+				// 마지막 row 지정 로직.
+				
 				// Figure out if the value is an index in the SST
 				String cellType = attributes.getValue("t");
 				nextIsString = cellType != null && cellType.equals("s");
@@ -232,6 +222,8 @@ public class FileController {
 			// Output after we've seen the string contents
 			if(name.equals("v") || (inlineStr && name.equals("c"))) {
 				System.out.println(lastContents);
+				excelList.put(cellField, lastContents);
+				cellField = "";
 			}
 		}
 
