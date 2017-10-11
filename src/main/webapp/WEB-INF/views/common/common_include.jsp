@@ -5,8 +5,8 @@
 <!-- <link rel="apple-touch-icon-precomposed" href="/img/post_ico_144X144.png"> -->
 
 <!-- CSS -->
-<!-- <link rel="stylesheet" type="text/css" href="css/reset.css" /> -->
-<!-- <link rel="stylesheet" type="text/css" href="css/default.css" /> -->
+<link rel="stylesheet" type="text/css" href="css/reset.css" />
+<link rel="stylesheet" type="text/css" href="css/default.css" />
 <!-- <link rel="stylesheet" type="text/css" href="css/jquery-ui.css" /> -->
 <!-- <link rel="stylesheet" href="css/slidemenu.min.css"> -->
 

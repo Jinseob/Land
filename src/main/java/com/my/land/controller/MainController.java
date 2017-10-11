@@ -26,7 +26,7 @@ public class MainController {
 	@Autowired
 	private CmmnDao dao;
 	
-	@RequestMapping(value = "main.do")
+	@RequestMapping(value = "/main.do")
 	public String main(Locale locale, ModelMap model, RedirectAttributes redirectAttr,
 			HttpServletRequest request, HttpServletResponse response, HttpSession session) throws Exception{
 		

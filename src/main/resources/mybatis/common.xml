@@ -11,4 +11,465 @@
 	<select id="selectLand" parameterType="com.my.land.model.SearchOptionVO" resultType="com.my.land.model.TBL01VO">
 		SELECT * FROM TBL01
 	</select>
+	
+	<!-- 전체집계 -->
+	<!-- 전용면적 / 매매평균가 / 전세평균가 / 매매-전세 / 월세보증평균가 / 월세평균 / 월세환산가 / 1년환산월세 / 수익률(%) / m2 당매매가 -->
+	<select id="selectLandTotal" parameterType="com.my.land.model.SearchOptionVO" resultType="com.my.land.model.A0012VO">
+		SELECT 	lttbl1.size1 AS size1,
+				lttbl1.avg1 AS amt1,
+	       		lttbl2.avg1 AS amt2,
+	       		(lttbl1.avg1 - lttbl2.avg1) AS diff1,
+	       		lttbl3.avg1 AS amt3,
+	       		lttbl3.avg2 AS amt4,
+	       		ROUND((lttbl3.avg1 * lttbl3.avg2) / (lttbl2.avg1 - lttbl3.avg1),2) AS mmcal,
+	       		ROUND((lttbl3.avg2 + (lttbl3.avg1 * lttbl3.avg2) / (lttbl2.avg1 - lttbl3.avg1))*12,2) AS yycal,
+	       		ROUND((ROUND((lttbl3.avg2 + (lttbl3.avg1 * lttbl3.avg2) / (lttbl2.avg1 - lttbl3.avg1))*12,2) / lttbl1.avg1)*100,2) AS percal,
+	       		ROUND(lttbl1.avg1/lttbl1.size1,2) AS m2amt
+	  	  FROM 	(SELECT size1,
+		       			ROUND(AVG(AMT1)) AS AVG1,
+		       			ROUND(AVG(AMT2)) AS AVG2
+		  		   FROM TBL01
+		 		  WHERE SGG = '서울특별시 강남구 개포동'
+		   			AND BLDNM = '개포주공 1단지'
+		   			AND CONTYY BETWEEN '201707' AND '201708'
+		   			AND type1 = '매매'
+		   			AND size1 = '58.08'
+				) AS lttbl1
+		 INNER 	JOIN
+	       		(SELECT size1,
+		       			ROUND(AVG(AMT1)) AS AVG1,
+		       			ROUND(AVG(AMT2)) AS AVG2
+		  		   FROM TBL01
+		 		  WHERE SGG = '서울특별시 강남구 개포동'
+		   			AND BLDNM = '개포주공 1단지'
+		   			AND CONTYY BETWEEN '201707' AND '201708'
+		   			AND type1 = '전세'
+		   			AND size1 = '58.08'
+				) AS lttbl2
+		 INNER 	JOIN 
+	       		(SELECT size1,
+		       			ROUND(AVG(AMT1)) AS AVG1,
+		       			ROUND(AVG(AMT2)) AS AVG2
+		  		   FROM TBL01
+		 		  WHERE SGG = '서울특별시 강남구 개포동'
+		   			AND BLDNM = '개포주공 1단지'
+		   			AND CONTYY BETWEEN '201707' AND '201708'
+		   			AND type1 = '월세'
+		   			AND size1 = '58.08'
+	        	) AS lttbl3
+	         ON lttbl1.size1 = lttbl2.size1
+	        AND lttbl1.size1 = lttbl3.size1
+	</select>
+	
+<!-- 	<select id="selectLandTotal" parameterType="com.my.land.model.SearchOptionVO" resultType="com.my.land.model.A0012VO"> -->
+<!-- 		SELECT 	"aaaa" as size1, -->
+<!-- 				"bbbb" AS amt1, -->
+<!-- 	       		"cccc" AS amt2, -->
+<!-- 	       		"dddd" AS diff1 -->
+<!-- 	       	from dual -->
+<!-- 	</select> -->
+	
+	<!-- 월별집계 상단 -->
+	<!-- 구분 / 전용면적 / 월별 / 건수 / 평균가 / 평균월세  -->
+	<select id="selectLandMMHead" parameterType="com.my.land.model.SearchOptionVO" resultType="com.my.land.model.A0013VO">
+		SELECT 	lttbl3.type1,
+       			lttbl3.size1,
+       			lttbl3.yymm,
+       			IFNULL(lttbl4.cnt,0) AS cnt,
+       			IFNULL(lttbl4.amt1,0) AS amt1,
+       			IFNULL(lttbl4.amt2,0) AS amt2      
+  		  FROM 	(SELECT '매매' AS type1, yymm, size1
+	  			   FROM (SELECT CONCAT(ltbl1.yy, tbl_mm.mm) AS yymm, size1
+		  				   FROM tbl_mm,
+		       				    (SELECT SUBSTRING(contyy,1,4) AS yy,
+		               				   	size1
+			  					   FROM tbl01
+			 					  WHERE CONTYY BETWEEN '201706' AND '201708'
+			   					   	AND size1 = '58.08'
+			 					  GROUP BY SUBSTRING(contyy,1,4)
+		        				) AS ltbl1
+						) AS lttbl2
+	 			  WHERE yymm BETWEEN '201706' AND '201708'	 
+		 		  UNION 
+				 SELECT '전세' AS type1, yymm, size1
+	  	  		   FROM (SELECT CONCAT(ltbl1.yy, tbl_mm.mm) AS yymm, size1
+		  		  		   FROM tbl_mm,
+		       		   			(SELECT SUBSTRING(contyy,1,4) AS yy,
+		               		   			size1
+			  			  		   FROM tbl01
+			 			 		  WHERE CONTYY BETWEEN '201706' AND '201708'
+			   			   			AND size1 = '58.08'
+			 			 		  GROUP BY SUBSTRING(contyy,1,4)
+		        	   			) AS ltbl1
+			   			) AS lttbl2
+	 	 		  WHERE yymm BETWEEN '201706' AND '201708'
+		 		  UNION 
+				 SELECT '월세' AS type1, yymm, size1
+	  	  		   FROM (SELECT CONCAT(ltbl1.yy, tbl_mm.mm) AS yymm, size1
+		  		  		   FROM tbl_mm,
+		       		   			(SELECT SUBSTRING(contyy,1,4) AS yy,
+		               		   			size1
+			  			  		   FROM tbl01
+			 			 		  WHERE CONTYY BETWEEN '201706' AND '201708'
+			   			   			AND size1 = '58.08'
+			 			 		  GROUP BY SUBSTRING(contyy,1,4)
+		        	   			) AS ltbl1
+			   			) AS lttbl2
+	 	 		  WHERE yymm BETWEEN '201706' AND '201708'
+        		) AS lttbl3
+         LEFT JOIN (SELECT type1,
+	       				   size1,
+	       				   contyy,
+	       				   COUNT(*) AS cnt,
+	       				   ROUND(AVG(amt1)) AS amt1,
+	       				   ROUND(AVG(amt2)) AS amt2
+	  				  FROM tbl01
+	 				 WHERE SGG = '서울특별시 강남구 개포동'
+	   				   AND BLDNM = '개포주공 1단지'
+	   				   AND CONTYY BETWEEN '201706' AND '201708'
+	   				   AND size1 = '58.08'
+	 				 GROUP BY type1, size1, contyy
+	 			    ) AS lttbl4
+ 		   ON lttbl3.type1 = lttbl4.type1
+		  AND lttbl3.size1 = lttbl4.size1
+		  AND lttbl3.yymm = lttbl4.contyy
+		GROUP BY lttbl3.type1, lttbl3.size1, lttbl3.yymm
+	</select>
+	
+	<!-- 월별집계 하단 -->
+	<!-- 전용면적 / 년월 / 매매평균가 / 전세평균가 / 매매-전세 / 월세보증평균가 / 월세평균 / 월세환산가 / 1년환산월세 / 수익률(%) / m2 당매매가  -->
+	<select id="selectLandMMTotal" parameterType="com.my.land.model.SearchOptionVO" resultType="com.my.land.model.A0014VO">
+		SELECT lttbl0.size1,
+       		   lttbl0.contyy,
+       		   IFNULL(lttbl1.avg1,0) AS amt1,
+       		   IFNULL(lttbl2.avg1,0) AS amt2,
+       		   (IFNULL(lttbl1.avg1,0) - IFNULL(lttbl2.avg1,0)) AS diff1,
+       		   IFNULL(lttbl3.avg1,0) AS amt3,
+       		   IFNULL(lttbl3.avg2,0) AS amt4,       
+       		   ROUND( (IFNULL(lttbl3.avg1,0) * IFNULL(lttbl3.avg2,0)) / (IFNULL(lttbl2.avg1,0) - IFNULL(lttbl3.avg1,0)),2 ) AS mmcal,       
+       		   ROUND( (IFNULL(lttbl3.avg2,0) + ((IFNULL(lttbl3.avg1,0) * IFNULL(lttbl3.avg2,0)) / (IFNULL(lttbl2.avg1,0) - IFNULL(lttbl3.avg1,0))) )*12,2 ) AS yycal,
+       		   IFNULL(ROUND((ROUND((IFNULL(lttbl3.avg2,0) + (IFNULL(lttbl3.avg1,0) * IFNULL(lttbl3.avg2,0)) / (IFNULL(lttbl2.avg1,0) - IFNULL(lttbl3.avg1,0)))*12,2) / IFNULL(lttbl1.avg1,0))*100,2),0) AS percal,
+       		   IFNULL(ROUND(IFNULL(lttbl1.avg1,0) / IFNULL(lttbl1.size1,0),2),0) AS m2amt
+  		  FROM (SELECT contyy,
+	       			   size1
+	  			  FROM tbl01
+	 			 WHERE SGG = '서울특별시 강남구 개포동'
+	   			   AND BLDNM = '개포주공 1단지'
+				   AND CONTYY BETWEEN '201706' AND '201708'
+				   AND size1 = '58.08'
+				 GROUP BY contyy, size1
+			   ) AS lttbl0
+		  LEFT JOIN (SELECT contyy,
+			                size1,
+				 	        ROUND(AVG(AMT1)) AS AVG1,
+					        ROUND(AVG(AMT2)) AS AVG2
+					   FROM TBL01
+					  WHERE SGG = '서울특별시 강남구 개포동'
+						AND BLDNM = '개포주공 1단지'
+						AND CONTYY BETWEEN '201706' AND '201708'
+						AND type1 = '매매'
+						AND size1 = '58.08'
+				 	  GROUP BY contyy, size1) AS lttbl1
+		    ON lttbl0.contyy = lttbl1.contyy AND lttbl0.size1 = lttbl1.size1
+		  LEFT JOIN (SELECT contyy,
+							size1,
+							ROUND(AVG(AMT1)) AS AVG1,
+							ROUND(AVG(AMT2)) AS AVG2
+					   FROM TBL01
+					  WHERE SGG = '서울특별시 강남구 개포동'
+						AND BLDNM = '개포주공 1단지'
+						AND CONTYY BETWEEN '201706' AND '201708'
+						AND type1 = '전세'
+						AND size1 = '58.08'
+					  GROUP BY contyy, size1) AS lttbl2
+			ON lttbl0.contyy = lttbl2.contyy AND lttbl0.size1 = lttbl2.size1
+		  LEFT JOIN (SELECT contyy,
+							size1,
+							ROUND(AVG(AMT1)) AS AVG1,
+							ROUND(AVG(AMT2)) AS AVG2
+					   FROM TBL01
+					  WHERE SGG = '서울특별시 강남구 개포동'
+						AND BLDNM = '개포주공 1단지'
+						AND CONTYY BETWEEN '201706' AND '201708'
+						AND type1 = '월세'
+						AND size1 = '58.08'
+					  GROUP BY contyy, size1 ) AS lttbl3
+			ON lttbl0.contyy = lttbl3.contyy AND lttbl0.size1 = lttbl3.size1
+	</select>
+	
+	<!-- 데이터 삭제 (YYYYMM 기준) -->
+	<delete id="deleteData" parameterType="com.my.land.model.TBL01VO">
+		DELETE FROM TBL01
+		 WHERE CONTYY = #{contyy}
+	</delete>
+	
+	<!-- 아파트매매 입력 -->
+	<insert id="insertApartmentSell" parameterType="com.my.land.model.TBL01VO">
+		INSERT INTO tbl01(
+			SGG,
+			BUNJI,
+			BONBUN,
+			BUBUN,
+			BLDNM,
+			
+			SIZE1,
+			CONTYY,
+			CONTDD,
+			AMT1,
+			FLOOR,
+			
+			VULIDYY,
+			DORONM,
+			TYPE2,
+			TYPE1,
+			SIZE2,
+			
+			AMT2
+			) VALUES(
+			#{sgg},
+			#{bunji},
+			#{bonbun},
+			#{bubun},
+			#{bldnm},
+
+			#{size1},
+			#{contyy},
+			#{contdd},
+			#{amt1},
+			#{floor},
+
+			#{vulidyy},
+			#{doronm},
+			#{type2},
+			#{type1},
+			#{size2},
+
+			#{amt2}
+			)
+	</insert>
+	
+		<!-- 아파트(전월세) 입력 -->
+<!-- 	<insert id="insertApartmentRent" parameterType="com.my.land.model.TBL01VO"> -->
+<!-- 		INSERT INTO tbl01( -->
+<!-- 			SGG, -->
+<!-- 			BUNJI, -->
+<!-- 			BONBUN, -->
+<!-- 			BUBUN, -->
+<!-- 			BLDNM, -->
+			
+<!-- 			SIZE1, -->
+<!-- 			CONTYY, -->
+<!-- 			CONTDD, -->
+<!-- 			AMT1, -->
+<!-- 			FLOOR, -->
+			
+<!-- 			VULIDYY, -->
+<!-- 			DORONM, -->
+<!-- 			TYPE2, -->
+<!-- 			TYPE1, -->
+<!-- 			SIZE2, -->
+			
+<!-- 			AMT2 -->
+<!-- 			) VALUES( -->
+<!-- 			#{sgg}, -->
+<!-- 			#{bunji}, -->
+<!-- 			#{bonbun}, -->
+<!-- 			#{bubun}, -->
+<!-- 			#{bldnm}, -->
+
+<!-- 			#{size1}, -->
+<!-- 			#{contyy}, -->
+<!-- 			#{contdd}, -->
+<!-- 			#{amt1}, -->
+<!-- 			#{floor}, -->
+
+<!-- 			#{vulidyy}, -->
+<!-- 			#{doronm}, -->
+<!-- 			#{type2}, -->
+<!-- 			#{type1}, -->
+<!-- 			#{size2}, -->
+
+<!-- 			#{amt2} -->
+<!-- 			) -->
+<!-- 	</insert> -->
+	
+	<!-- 연립/다세대(매매) 입력 -->
+<!-- 	<insert id="insertApartmentRent" parameterType="com.my.land.model.TBL01VO"> -->
+<!-- 		INSERT INTO tbl01( -->
+<!-- 			SGG, -->
+<!-- 			BUNJI, -->
+<!-- 			BONBUN, -->
+<!-- 			BUBUN, -->
+<!-- 			BLDNM, -->
+			
+<!-- 			SIZE1, -->
+<!-- 			CONTYY, -->
+<!-- 			CONTDD, -->
+<!-- 			AMT1, -->
+<!-- 			FLOOR, -->
+			
+<!-- 			VULIDYY, -->
+<!-- 			DORONM, -->
+<!-- 			TYPE2, -->
+<!-- 			TYPE1, -->
+<!-- 			SIZE2, -->
+			
+<!-- 			AMT2 -->
+<!-- 			) VALUES( -->
+<!-- 			#{sgg}, -->
+<!-- 			#{bunji}, -->
+<!-- 			#{bonbun}, -->
+<!-- 			#{bubun}, -->
+<!-- 			#{bldnm}, -->
+
+<!-- 			#{size1}, -->
+<!-- 			#{contyy}, -->
+<!-- 			#{contdd}, -->
+<!-- 			#{amt1}, -->
+<!-- 			#{floor}, -->
+
+<!-- 			#{vulidyy}, -->
+<!-- 			#{doronm}, -->
+<!-- 			#{type2}, -->
+<!-- 			#{type1}, -->
+<!-- 			#{size2}, -->
+
+<!-- 			#{amt2} -->
+<!-- 			) -->
+<!-- 	</insert> -->
+	
+	<!-- 연립/다세대(전월세) 입력 -->
+<!-- 	<insert id="insertApartmentRent" parameterType="com.my.land.model.TBL01VO"> -->
+<!-- 		INSERT INTO tbl01( -->
+<!-- 			SGG, -->
+<!-- 			BUNJI, -->
+<!-- 			BONBUN, -->
+<!-- 			BUBUN, -->
+<!-- 			BLDNM, -->
+			
+<!-- 			SIZE1, -->
+<!-- 			CONTYY, -->
+<!-- 			CONTDD, -->
+<!-- 			AMT1, -->
+<!-- 			FLOOR, -->
+			
+<!-- 			VULIDYY, -->
+<!-- 			DORONM, -->
+<!-- 			TYPE2, -->
+<!-- 			TYPE1, -->
+<!-- 			SIZE2, -->
+			
+<!-- 			AMT2 -->
+<!-- 			) VALUES( -->
+<!-- 			#{sgg}, -->
+<!-- 			#{bunji}, -->
+<!-- 			#{bonbun}, -->
+<!-- 			#{bubun}, -->
+<!-- 			#{bldnm}, -->
+
+<!-- 			#{size1}, -->
+<!-- 			#{contyy}, -->
+<!-- 			#{contdd}, -->
+<!-- 			#{amt1}, -->
+<!-- 			#{floor}, -->
+
+<!-- 			#{vulidyy}, -->
+<!-- 			#{doronm}, -->
+<!-- 			#{type2}, -->
+<!-- 			#{type1}, -->
+<!-- 			#{size2}, -->
+
+<!-- 			#{amt2} -->
+<!-- 			) -->
+<!-- 	</insert> -->
+	
+	<!-- 오피스텔(매매) 입력 -->
+<!-- 	<insert id="insertApartmentRent" parameterType="com.my.land.model.TBL01VO"> -->
+<!-- 		INSERT INTO tbl01( -->
+<!-- 			SGG, -->
+<!-- 			BUNJI, -->
+<!-- 			BONBUN, -->
+<!-- 			BUBUN, -->
+<!-- 			BLDNM, -->
+			
+<!-- 			SIZE1, -->
+<!-- 			CONTYY, -->
+<!-- 			CONTDD, -->
+<!-- 			AMT1, -->
+<!-- 			FLOOR, -->
+			
+<!-- 			VULIDYY, -->
+<!-- 			DORONM, -->
+<!-- 			TYPE2, -->
+<!-- 			TYPE1, -->
+<!-- 			SIZE2, -->
+			
+<!-- 			AMT2 -->
+<!-- 			) VALUES( -->
+<!-- 			#{sgg}, -->
+<!-- 			#{bunji}, -->
+<!-- 			#{bonbun}, -->
+<!-- 			#{bubun}, -->
+<!-- 			#{bldnm}, -->
+
+<!-- 			#{size1}, -->
+<!-- 			#{contyy}, -->
+<!-- 			#{contdd}, -->
+<!-- 			#{amt1}, -->
+<!-- 			#{floor}, -->
+
+<!-- 			#{vulidyy}, -->
+<!-- 			#{doronm}, -->
+<!-- 			#{type2}, -->
+<!-- 			#{type1}, -->
+<!-- 			#{size2}, -->
+
+<!-- 			#{amt2} -->
+<!-- 			) -->
+<!-- 	</insert> -->
+	
+	<!-- 오피스텔(전월세) 입력 -->
+<!-- 	<insert id="insertApartmentRent" parameterType="com.my.land.model.TBL01VO"> -->
+<!-- 		INSERT INTO tbl01( -->
+<!-- 			SGG, -->
+<!-- 			BUNJI, -->
+<!-- 			BONBUN, -->
+<!-- 			BUBUN, -->
+<!-- 			BLDNM, -->
+			
+<!-- 			SIZE1, -->
+<!-- 			CONTYY, -->
+<!-- 			CONTDD, -->
+<!-- 			AMT1, -->
+<!-- 			FLOOR, -->
+			
+<!-- 			VULIDYY, -->
+<!-- 			DORONM, -->
+<!-- 			TYPE2, -->
+<!-- 			TYPE1, -->
+<!-- 			SIZE2, -->
+			
+<!-- 			AMT2 -->
+<!-- 			) VALUES( -->
+<!-- 			#{sgg}, -->
+<!-- 			#{bunji}, -->
+<!-- 			#{bonbun}, -->
+<!-- 			#{bubun}, -->
+<!-- 			#{bldnm}, -->
+
+<!-- 			#{size1}, -->
+<!-- 			#{contyy}, -->
+<!-- 			#{contdd}, -->
+<!-- 			#{amt1}, -->
+<!-- 			#{floor}, -->
+
+<!-- 			#{vulidyy}, -->
+<!-- 			#{doronm}, -->
+<!-- 			#{type2}, -->
+<!-- 			#{type1}, -->
+<!-- 			#{size2}, -->
+
+<!-- 			#{amt2} -->
+<!-- 			) -->
+<!-- 	</insert> -->
 </mapper>

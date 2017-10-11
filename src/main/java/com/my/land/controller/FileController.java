@@ -17,7 +17,11 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.xml.sax.Attributes;
@@ -30,6 +34,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 import com.my.land.dao.CmmnDao;
 import com.my.land.model.FileVO;
+import com.my.land.model.TBL01VO;
 
 @Controller
 public class FileController {
@@ -44,19 +49,118 @@ public class FileController {
 	@Autowired
 	private CmmnDao dao;
 	
+	@Autowired
+	private DataSourceTransactionManager txManager;
+	
 	@RequestMapping(value = "fileUpload.do")
 	public String fileUpload(@ModelAttribute("fileUpload")FileVO fileUpload, HttpServletRequest request) throws Exception{
 		
 		this.processOneSheet(fileUpload);
 		System.out.println("Column : " + column + " , Row : " + row);
-		for(int i = 2 ; i <= row ; i++){	// 1 은 Head
-			String tempColumn[] = column.split(";");
-			for(int j = 0; j < tempColumn.length; j++){
-				System.out.print(tempColumn[j] + i + " : " + excelList.get(tempColumn[j] + i) + " / ");
-			}
-			System.out.println();
-		}
+		System.out.println(fileUpload.getName() + " : " + fileUpload.getFileData().getOriginalFilename());
+		
+		this.insertApartmentSell();
+//		try{
+//			TBL01VO tbl01VO = null;
+//			for(int i = 2 ; i <= row ; i++){	// 1 은 Head
+//				tbl01VO = new TBL01VO();
+//				String tempColumn[] = column.split(";");
+//				for(int j = 0; j < tempColumn.length; j++){
+//					System.out.print(tempColumn[j] + i + " : " + excelList.get(tempColumn[j] + i) + " / ");
+//				}
+////				dao.insert("common.insertApartmentSell", paramVO);
+//				System.out.println();
+//			}
+//		}catch(Exception e){
+//			
+//		}finally{
+//			
+//		}
 		return "main";
+	}
+	
+	private void insertApartmentSell(){
+		DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+		def.setName("Transaction");
+		def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+		
+		TransactionStatus status = txManager.getTransaction(def);
+		
+		long startTime = System.currentTimeMillis();
+		try{
+			TBL01VO tbl01VO = null;
+			for(int i = 2 ; i <= row ; i++){	// 1 은 Head
+				tbl01VO = new TBL01VO();
+				String tempColumn[] = column.split(";");
+//				for(int j = 0; j < tempColumn.length; j++){
+//					System.out.print(tempColumn[j] + i + " : " + excelList.get(tempColumn[j] + i) + " / ");
+//				}
+				String temp = "";
+				int j = 0;
+				// 엑셀에서 불러오는 값
+				tbl01VO.setSgg(excelList.get(tempColumn[j++] + i));
+				tbl01VO.setBunji(excelList.get(tempColumn[j++] + i));
+				tbl01VO.setBonbun(excelList.get(tempColumn[j++] + i));
+				tbl01VO.setBubun(excelList.get(tempColumn[j++] + i));
+				tbl01VO.setBldnm(excelList.get(tempColumn[j++] + i));
+				
+				tbl01VO.setSize1(excelList.get(tempColumn[j++] + i));
+				tbl01VO.setContyy(excelList.get(tempColumn[j++] + i));
+				tbl01VO.setContdd(excelList.get(tempColumn[j++] + i));
+				String tempAmt = excelList.get(tempColumn[j++] + i).replaceAll(",", "").trim();
+				int amt1 = Integer.parseInt(tempAmt);
+				tbl01VO.setAmt1(amt1);
+				tbl01VO.setFloor(excelList.get(tempColumn[j++] + i));
+
+				tbl01VO.setVulidyy(excelList.get(tempColumn[j++] + i));
+				tbl01VO.setDoronm(excelList.get(tempColumn[j++] + i));
+				// 엑셀에서 불러오는 값 여기까지.
+				
+				// 고정값.
+				tbl01VO.setType2("아파트");
+				tbl01VO.setType1("매매");
+				tbl01VO.setSize2("");
+				tbl01VO.setAmt2(0);
+				// 고정값 여기까지.
+				
+				temp += tbl01VO.getSgg() + " / ";
+				temp += tbl01VO.getBunji() + " / ";
+				temp += tbl01VO.getBonbun() + " / ";
+				temp += tbl01VO.getBubun() + " / ";
+				temp += tbl01VO.getBldnm() + " / ";
+				temp += tbl01VO.getSize1() + " / ";
+				temp += tbl01VO.getContyy() + " / ";
+				temp += tbl01VO.getContdd() + " / ";
+				temp += tbl01VO.getAmt1() + " / ";
+				temp += tbl01VO.getFloor() + " / ";
+				temp += tbl01VO.getVulidyy() + " / ";
+				temp += tbl01VO.getDoronm() + " / ";
+				temp += tbl01VO.getType2() + " / ";
+				temp += tbl01VO.getType1() + " / ";
+				temp += tbl01VO.getSize2() + " / ";
+				temp += tbl01VO.getAmt2() + " / ";
+				
+//				System.out.println(temp + " ----- " + j + " : " + i);
+				
+				// 최초 1회면 YYYYMM 기준으로 동일한 모든 데이터를 삭제한다.
+				if(i == 2){
+					dao.delete("common.deleteData", tbl01VO);
+				}
+				
+				dao.insert("common.insertApartmentSell", tbl01VO);
+//				System.out.println();
+			}
+		}catch(Exception e){
+			System.out.println(e.getMessage() + " : exception.");
+			txManager.rollback(status);	// 에러 발생했을 경우 rollback;
+		}finally{
+			System.out.println("batch 로 변경해야함.");
+			long endTime = System.currentTimeMillis();
+			long resultTime = endTime - startTime;
+			System.out.println("소요시간 : " + resultTime/1000 + "(ms)");
+		}
+		
+		txManager.commit(status); 	// 성공했을 경우 commit
 	}
 	
 	// 문자 제외. 숫자만 남기기.
@@ -109,12 +213,12 @@ public class FileController {
 
 			Iterator<InputStream> sheets = r.getSheetsData();
 			while (sheets.hasNext()) {
-				System.out.println("Processing new sheet:\n");
+//				System.out.println("Processing new sheet:\n");
 				InputStream sheet = sheets.next();
 				InputSource sheetSource = new InputSource(sheet);
 				parser.parse(sheetSource);
 				sheet.close();
-				System.out.println("");
+//				System.out.println("");
 			}
 		} finally {
 			pkg.close();
@@ -160,7 +264,7 @@ public class FileController {
 			// c => cell
 			if(name.equals("c")) {
 				// Print the cell reference
-				System.out.print(attributes.getValue("r") + " - ");
+//				System.out.print(attributes.getValue("r") + " - ");
 				cellField = attributes.getValue("r");
 				excelList.put(cellField, "");
 				
@@ -221,7 +325,7 @@ public class FileController {
 			// v => contents of a cell
 			// Output after we've seen the string contents
 			if(name.equals("v") || (inlineStr && name.equals("c"))) {
-				System.out.println(lastContents);
+//				System.out.println(lastContents);
 				excelList.put(cellField, lastContents);
 				cellField = "";
 			}
