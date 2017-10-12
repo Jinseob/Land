@@ -13,8 +13,11 @@
 	$(document).ready(function() {
 		
 	});
+	
+	function fncPageLoad(page){
+		$("#frm").attr({"action" : page, "method" : "POST", "target" : "_self"}).submit();
+	}
 </script>
-<title>부동산 시세 정보</title>
 </head>
 
 <body>
@@ -48,16 +51,16 @@
 						<div class="sub_cont">
 
 							<div class="search_btn_wrap" style="">
-								<p class="result_num">주문상품 : ${fn:length(coItemList)} 건</p>
 								<div class="search_btn_area">
-									<input class="btn_newmake" id="" type="button" value="목록" onclick="javascript:goList();">
+									<input class="btn_newmake" id="" type="button" value="이전" onclick="javascript:fncPageLoad('main.do');">
 								</div>
 							</div>
 
+							<div class="order_subtit">전체 집계</div>
 							<!-- board_list_wrap (게시물 리스트) -->
 							<div class="orderdetail_wrap_tit">
 								<table class="table_common" summary="전체 집계">
-									<caption>주문서작성</caption>
+									<caption>전체 집계</caption>
 									<colgroup>
 										<col style="width: 100px;" />
 										<col style="width: 100px;" />
@@ -107,17 +110,17 @@
 									</colgroup>
 									<tbody>
 										<tr style="border-bottom: 0px;">
-											<td class="txt_rig">${a0012.size1}</td>
-											<td class="txt_rig">${a0012.amt1}</td>
-											<td class="txt_rig">${a0012.amt2}</td>
-											<td class="txt_rig">${a0012.diff1}</td>
-											<td class="txt_rig">${a0012.amt3}</td>
+											<td class="txt_rig"><fmt:formatNumber value="${a0012.size1}" /></td>
+											<td class="txt_rig"><fmt:formatNumber value="${a0012.amt1}" /></td>
+											<td class="txt_rig"><fmt:formatNumber value="${a0012.amt2}" /></td>
+											<td class="txt_rig"><fmt:formatNumber value="${a0012.diff1}" /></td>
+											<td class="txt_rig"><fmt:formatNumber value="${a0012.amt3}" /></td>
 											
-											<td class="txt_rig blue_B">${a0012.amt4}</td>
-											<td class="txt_rig blue_B">${a0012.mmcal}</td>
-											<td class="txt_rig blue_B">${a0012.yycal}</td>
-											<td class="txt_rig blue_B">${a0012.percal}</td>
-											<td class="txt_rig blue_B last">${a0012.m2amt}</td>
+											<td class="txt_rig blue_B"><fmt:formatNumber value="${a0012.amt4}" /></td>
+											<td class="txt_rig blue_B"><fmt:formatNumber value="${a0012.mmcal}" /></td>
+											<td class="txt_rig blue_B"><fmt:formatNumber value="${a0012.yycal}" /></td>
+											<td class="txt_rig blue_B"><fmt:formatNumber value="${a0012.percal}" /></td>
+											<td class="txt_rig blue_B last"><fmt:formatNumber value="${a0012.m2amt}" /></td>
 										</tr>
 									</tbody>
 								</table>
@@ -170,12 +173,15 @@
 												<c:forEach items="${a0013List }" var="a0013" varStatus="status">
 													<tr style="border-bottom: 0px;">
 														<td class="txt_center">${a0013.type1}</td>
-														<td class="txt_rig">${a0013.size1}</td>
-														<td class="txt_center">${a0013.yymm}</td>
-														<td class="txt_rig">${a0013.cnt}</td>
-														<td class="txt_rig">${a0013.amt1}</td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0013.size1}" /></td>
+														<td class="txt_center">
+															<fmt:parseDate value="${a0013.yymm}" var="yymm" pattern="yyyyMM" />
+															<fmt:formatDate value="${yymm }" pattern="yyyy.MM"/>
+														</td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0013.cnt}" /></td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0013.amt1}" /></td>
 														
-														<td class="txt_left blue_B last">${a0013.amt2}</td>
+														<td class="txt_left blue_B last"><fmt:formatNumber value="${a0013.amt2}" /></td>
 													</tr>
 												</c:forEach>
 											</c:when>
@@ -243,17 +249,20 @@
 											<c:when test="${fn:length(a0014List) > 0 }">
 												<c:forEach items="${a0014List }" var="a0014" varStatus="status">
 													<tr style="border-bottom: 0px;">
-														<td class="txt_rig">${a0014.size1}</td>
-														<td class="txt_rig">${a0014.contyy}</td>
-														<td class="txt_rig">${a0014.amt1}</td>
-														<td class="txt_rig">${a0014.amt2}</td>
-														<td class="txt_rig">${a0014.diff1}</td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0014.size1}" /></td>
+														<td class="txt_center">
+															<fmt:parseDate value="${a0014.contyy}" var="contyy" pattern="yyyyMM" />
+															<fmt:formatDate value="${contyy }" pattern="yyyy.MM"/>
+														</td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0014.amt1}" /></td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0014.amt2}" /></td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0014.diff1}" /></td>
 														
-														<td class="txt_rig">${a0014.amt3}</td>
-														<td class="txt_rig">${a0014.amt4}</td>
-														<td class="txt_rig">${a0014.mmcal}</td>
-														<td class="txt_rig">${a0014.yycal}</td>
-														<td class="txt_rig blue_B last">${a0014.percal}</td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0014.amt3}" /></td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0014.amt4}" /></td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0014.mmcal}" /></td>
+														<td class="txt_rig"><fmt:formatNumber value="${a0014.yycal}" /></td>
+														<td class="txt_rig blue_B last"><fmt:formatNumber value="${a0014.percal}" /></td>
 													</tr>
 												</c:forEach>
 											</c:when>
@@ -267,16 +276,17 @@
 
 							<div class="bottom_btn_wrap">
 								<div class="right_btn_area">
-									<c:choose>
-										<c:when test="${co.jindo_code == 'S'}">
-											<input class="btn_modify" type="button" id="" value="수정" onclick="javascript:alterCo();" />
-											<input class="btn_ord_cancel" type="button" id="" value="주문 취소" onclick="javascript:cancelCo();" />
-										</c:when>
-										<c:otherwise>
-											<input class="btn_modify" type="button" id="" value="수정" onclick="javascript:ignoreAlert();" />
-											<input class="btn_ord_cancel" type="button" id="" value="주문 취소" onclick="javascript:ignoreAlert();" />
-										</c:otherwise>
-									</c:choose>
+									<input class="btn_newmake" id="" type="button" value="이전" onclick="javascript:fncPageLoad('main.do');">
+<%-- 									<c:choose> --%>
+<%-- 										<c:when test="${co.jindo_code == 'S'}"> --%>
+<!-- 											<input class="btn_modify" type="button" id="" value="수정" onclick="javascript:alterCo();" /> -->
+<!-- 											<input class="btn_ord_cancel" type="button" id="" value="주문 취소" onclick="javascript:cancelCo();" /> -->
+<%-- 										</c:when> --%>
+<%-- 										<c:otherwise> --%>
+<!-- 											<input class="btn_modify" type="button" id="" value="수정" onclick="javascript:ignoreAlert();" /> -->
+<!-- 											<input class="btn_ord_cancel" type="button" id="" value="주문 취소" onclick="javascript:ignoreAlert();" /> -->
+<%-- 										</c:otherwise> --%>
+<%-- 									</c:choose> --%>
 								</div>
 							</div>
 							<!--bottom_btn_wrap-->

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -29,23 +30,21 @@ public class A0010Controller {
 	private CmmnDao dao;
 	
 	@RequestMapping(value = "/A0010.do")
-	public String a0010(Locale locale, ModelMap model, RedirectAttributes redirectAttr,
+	public String a0010(@ModelAttribute("searchVO")SearchOptionVO searchVO, Locale locale, ModelMap model, RedirectAttributes redirectAttr,
 			HttpServletRequest request, HttpServletResponse response, HttpSession session) throws Exception{
 		
-		SearchOptionVO searchOptionVO = new SearchOptionVO();
-		
 		/* 전체집계 */
-		A0012VO a0012 = (A0012VO) dao.select("common.selectLandTotal", searchOptionVO);
+		A0012VO a0012 = (A0012VO) dao.select("common.selectLandTotal", searchVO);
 		model.addAttribute("a0012", a0012);
 		
 		/* 월별집계 상단 */
 		@SuppressWarnings("unchecked")
-		List<A0013VO> a0013List = (List<A0013VO>) dao.selectList("common.selectLandMMHead", searchOptionVO);
+		List<A0013VO> a0013List = (List<A0013VO>) dao.selectList("common.selectLandMMHead", searchVO);
 		model.addAttribute("a0013List", a0013List);
 		
 		/* 월별집계 하단 */
 		@SuppressWarnings("unchecked")
-		List<A0014VO> a0014List = (List<A0014VO>) dao.selectList("common.selectLandMMTotal", searchOptionVO);
+		List<A0014VO> a0014List = (List<A0014VO>) dao.selectList("common.selectLandMMTotal", searchVO);
 		model.addAttribute("a0014List", a0014List);
 		
 		return "a0010";
